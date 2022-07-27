@@ -238,7 +238,7 @@ run_pc_target <- function(t,df,num,results_pc,curr_dir){
   output_text(t,num,algo)
   setwd(curr_dir)
   # vars <- create_target_directory(t) 
-  # Run local FCI
+  # Run local PC
   results <- run_local_pc(t,df,num,results_pc)
   
   return(results)
@@ -345,7 +345,8 @@ neighborhood_results <- function(t,localfci_result,pc_results,num){
            totalcpptime=localfci_result$totalTime,
            nodes=paste(localfci_result$Nodes,collapse = ",")
     )
-  results <- cbind(results,interNeighborhoodEdgeMetrics(localfci_mat,true_neighborhood_graph,
+  results <- cbind(results,interNeighborhoodEdgeMetrics(localfci_mat,
+                                                        network_info$true_dag,
                                                         t))
   return(results)
 }
@@ -385,7 +386,7 @@ neighborhood_results_pc <- function(t,localpc_result,pc_results,num){
            nodes_lpc=paste(localpc_result$Nodes,collapse = ",")
     )
   results <- cbind(results,interNeighborhoodEdgeMetrics(localpc_mat,
-                                                        true_neighborhood_graph,
+                                                        network_info$true_dag,
                                                         t))
   return(results)
 }
