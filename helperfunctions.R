@@ -191,9 +191,6 @@ run_global_pc <- function(df){
     "num_tests"=num_tests))
 }
 
-
-
-
 # PC Helpers --------------------------------------------------------------
 
 # Get the maximum size of separating sets used in PC algorithm
@@ -318,18 +315,22 @@ neighborhood_results <- function(t,localfci_result,pc_results,num){
   
   results <- all_metrics(localfci_mat,
                          true_neighborhood_graph,
-                         pc_mat,
-                         sapply(t,function(t) {which(nbhd==t)-1}),verbose = FALSE) # Need to check out the sapply here
+                         sapply(t,function(tg) {which(nbhd==tg)-1}),
+                         algo="lfci",ref="sub_cpdag",verbose = FALSE) 
+  results_pc <- all_metrics(pc_mat,
+                            true_neighborhood_graph,
+                            sapply(t,function(tg) {which(nbhd==tg)-1}),
+                            algo = "pc",ref = "sub_cpdag",verbose = FALSE)
   nbhd_metrics <- neighborhood_metrics(true_neighborhood_graph)
   
-  results <- cbind(nbhd_metrics,results)
+  results <- cbind(nbhd_metrics,results,results_pc)
   results <- results %>% 
     mutate(pc_num_tests=pc_results$num_tests[["PC"]],
-           fci_num_tests=pc_results$num_tests[["Local FCI"]],
+           lfci_num_tests=pc_results$num_tests[["Local FCI"]],
            pc_time=pc_results$time_diff[["PC"]],
-           fci_time=pc_results$time_diff[["Local FCI"]]) %>%
-    mutate(lmax_pc = pc_results$lmax$PC,
-           lmax_fci=pc_results$lmax[["Local FCI"]]) %>% 
+           lfci_time=pc_results$time_diff[["Local FCI"]]) %>%
+    mutate(pc_lmax = pc_results$lmax$PC,
+           lfci_lmax=pc_results$lmax[["Local FCI"]]) %>% 
     mutate(sim_number=array_num,
            alpha=alpha,
            net=net,
@@ -343,11 +344,10 @@ neighborhood_results <- function(t,localfci_result,pc_results,num){
     mutate(totalSkeletonTime=localfci_result$totalSkeletonTime,
            targetSkeletonTimes=paste(localfci_result$targetSkeletonTimes,collapse = ","),
            totalcpptime=localfci_result$totalTime,
-           nodes=paste(localfci_result$Nodes,collapse = ",")
+           nodes=paste(localfci_result$Nodes,collapse = ","),
+           true_nodes=paste(nbhd,collapse = ",")
     )
-  results <- cbind(results,interNeighborhoodEdgeMetrics(localfci_mat,
-                                                        network_info$true_dag,
-                                                        t))
+
   return(results)
 }
 
@@ -371,23 +371,19 @@ neighborhood_results_pc <- function(t,localpc_result,pc_results,num){
   
   results <- all_metrics(localpc_mat,
                          true_neighborhood_graph,
-                         pc_mat,
-                         sapply(t,function(t) {which(nbhd==t)-1}),verbose = FALSE) # Need to check out the sapply here
-  names(results) <- sub("^fci_","lpc_",names(results))
+                         sapply(t,function(tg) {which(nbhd==tg)-1}),
+                         algo = "lpc",ref = "sub_cpdag",verbose = FALSE) # Need to check out the sapply here
   results <- results %>%
-    select(starts_with("lpc")) %>% 
     mutate(lpc_num_tests=pc_results$num_tests[["Local PC"]],
            lpc_time=pc_results$time_diff[["Local PC"]]) %>%
-    mutate(lmax_lpc=pc_results$lmax[["Local PC"]]) %>% 
+    mutate(lpc_lmax=pc_results$lmax[["Local PC"]]) %>% 
     mutate(trial_num=num,
            targets=paste(t,collapse = ",")) %>% 
-    mutate(targetSkeletonTimes_lpc=paste(localpc_result$targetSkeletonTimes,collapse = ","),
-           totalcpptime_lpc=localpc_result$totalTime,
-           nodes_lpc=paste(localpc_result$Nodes,collapse = ",")
+    mutate(targetSkeletonTimes=paste(localpc_result$targetSkeletonTimes,collapse = ","),
+           totalcpptime=localpc_result$totalTime,
+           nodes=paste(localpc_result$Nodes,collapse = ",")
     )
-  results <- cbind(results,interNeighborhoodEdgeMetrics(localpc_mat,
-                                                        network_info$true_dag,
-                                                        t))
+
   return(results)
 }
 
